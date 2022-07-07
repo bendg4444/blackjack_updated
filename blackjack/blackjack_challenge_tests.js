@@ -60,7 +60,7 @@ Deno.test(
     const { logger, handler } = await getTestLogger()
     const c = playerChooses(['hit', 'stick'])
 
-    await takePlayerTurn({ logger })
+    takePlayerTurn({ logger })
     assertArrayIncludes(handler.messages, ['Hitting'])
     c.restore()
   }
@@ -70,7 +70,7 @@ Deno.test('playerTurn(): choosing to hit shows an updated hand', async () => {
   const { logger, handler } = await getTestLogger()
   const c = playerChooses(['hit', 'stick'])
 
-  await takePlayerTurn({ logger })
+  takePlayerTurn({ logger })
   const handInfo = handler.messages.filter((m) => m.startsWith('Your hand is'))
 
   // Check we have a 2nd instance of "Your hand is" message
@@ -87,7 +87,7 @@ Deno.test(
     const { logger, handler } = await getTestLogger()
     const c = playerChooses(['hit', 'stick'])
 
-    await takePlayerTurn({ logger })
+    takePlayerTurn({ logger })
     const handInfo = handler.messages.filter((m) =>
       m.startsWith('Your hand is')
     )
@@ -107,7 +107,7 @@ Deno.test(
     const { logger, handler } = await getTestLogger()
     const c = playerChooses(['hit'])
 
-    await takePlayerTurn({ logger, seed: 1595870164262 })
+    takePlayerTurn({ logger, seed: 1595870164262 })
 
     assertEquals(c.calls.length, 1)
     c.restore()
@@ -120,7 +120,7 @@ Deno.test(
     const { logger, handler } = await getTestLogger()
     const c = playerChooses(['hit'])
 
-    await play({ logger, seed: 1595870164262 })
+    play({ logger, seed: 1595870164262 })
     assertArrayIncludes(handler.messages, ['You lose!'])
     c.restore()
   }
