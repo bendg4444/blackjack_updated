@@ -44,7 +44,8 @@ export function playerTurn(deck, hand, logger = defaultLogger) {
 }
 
 export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
-  const shuffledDeck = shuffle(deck(), seed)
+  const orderedDeck = deck()
+  const shuffledDeck = shuffle(orderedDeck, seed)
   let playerHand = [shuffledDeck.shift(), shuffledDeck.shift()]
 
   let isPlayerTurn = true
