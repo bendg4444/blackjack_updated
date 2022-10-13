@@ -7,7 +7,7 @@ const WIN_MESSAGE = 'You win!'
 const DRAW_MESSAGE = 'Draw!'
 const defaultLogger = await getDefaultLogger()
 
-export function deck() {
+export function generateDeck() {
   const cards = []
 
   // TO DO: Write your code here
@@ -44,7 +44,8 @@ export function playerTurn(deck, hand, logger = defaultLogger) {
 }
 
 export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
-  const shuffledDeck = shuffle(deck(), seed)
+  const newDeck = generateDeck()
+  const shuffledDeck = shuffle(newDeck, seed)
   let playerHand = [shuffledDeck.shift(), shuffledDeck.shift()]
 
   let isPlayerTurn = true

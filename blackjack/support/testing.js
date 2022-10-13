@@ -1,4 +1,4 @@
-import { deck, playerTurn } from '../blackjack.js'
+import { generateDeck, playerTurn } from '../blackjack.js'
 import { stub } from 'https://deno.land/x/mock@0.13.0/stub.ts'
 import shuffle from './shuffle.js'
 
@@ -12,9 +12,9 @@ export function takePlayerTurn({ seed, logger } = {}) {
   let turnDeck
 
   if (!seed) {
-    turnDeck = deck()
+    turnDeck = generateDeck()
   } else {
-    turnDeck = shuffle(deck(), seed)
+    turnDeck = shuffle(generateDeck(), seed)
   }
 
   let playerHand = [turnDeck.shift(), turnDeck.shift()]
