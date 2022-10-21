@@ -12,11 +12,15 @@ import {
   play,
   playerDrawsCard,
   pointsForCard,
-  pointsForHand
+  pointsForHand,
+  split
 } from './blackjack.js'
 import shuffle from './support/shuffle.js'
 import { getTestLogger } from './support/logging.ts'
 import { playerChooses, takePlayerTurn } from './support/testing.js'
+
+//seed: 1666369614515 2 aces
+//seed: 1666371379198 same first card
 
 const deck1 = ['2H', 'AS'] //13
 const deck2 = ['JH', 'JD', 'QD'] //30
@@ -183,19 +187,6 @@ Deno.test('compareScores(): Testing the Lose', async () => {
 })
 
 Deno.test(
-  'playerTurn(): choosing to hit outputs a "Hitting" message',
-  async () => {
-    const { logger, handler } = await getTestLogger()
-    const c = playerChooses(['hit', 'stick'])
-    play({ logger, seed: 12 })
-
-    console.log(handler.messages)
-    assertArrayIncludes(handler.messages, ['Hitting'])
-    c.restore()
-  }
-)
-
-Deno.test(
   'playerTurn(): choosing to stick outputs a "Hitting" message',
   async () => {
     const { logger, handler } = await getTestLogger()
@@ -203,7 +194,7 @@ Deno.test(
     const c = playerChooses(['hit', 'stick'])
     play({ logger, seed: 12 })
 
-    console.log(handler.messages)
+    //console.log(handler.messages)
     assertArrayIncludes(handler.messages, ['Hitting'])
     c.restore()
   }
@@ -230,3 +221,38 @@ Deno.test(
     assertArrayIncludes(handler.messages, ['You win!'])
   }
 )
+
+Deno.test('Ensure player goes first and dealer goes second', async () => {
+  const { logger, handler } = await getTestLogger()
+  const c = playerChooses(['stick'])
+  play({ logger, seed: 12 })
+  console.log(handler.messages)
+  let inOrder = false
+  if (
+    handler.messages[0].includes('Your hand is') &&
+    handler.messages[2].includes("Dealer's hand is")
+  )
+    inOrder = true
+  assertEquals(inOrder, true)
+  c.restore()
+})
+
+Deno.test('split(): Testing splitting deck functionality', async () => {
+  const { logger, handler } = await getTestLogger()
+  const c = playerChooses(['yes'])
+  const seed = 12
+  let deck = generateDeck(seed)
+  let shuffledDeck = shuffle(deck, seed)
+
+  split(['4H', '4D'], shuffledDeck, logger)
+  console.log(handler.messages)
+})
+
+// Deno.test(
+//   'canSplit(): Testing whether card matching function works',
+//   async () => {
+//     assertEquals(canSplit(['KH', 'KD']), true)
+//     assertEquals(canSplit(['10D', '10C']), true)
+//     assertEquals(canSplit(['4H', '6D']), false)
+//   }
+// )

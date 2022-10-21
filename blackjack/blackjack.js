@@ -150,6 +150,7 @@ export function playerTurn(deck, hand, logger = defaultLogger) {
     }
     case 'stick': {
       // End the player's turn
+      logger.info('Sticking')
       return false
     }
     default: {
@@ -160,11 +161,23 @@ export function playerTurn(deck, hand, logger = defaultLogger) {
   }
 }
 
-//Plays game
+export function split(playerHand, shuffledDeck, logger) {
+  logger.info('Splitting')
+  let playerHand1 = [playerHand[0], shuffledDeck.shift()]
+  let playerHand2 = [playerHand[1], shuffledDeck.shift()]
+  logger.info('Split Deck 1: ' + playerHand1)
+  logger.info('Split Deck 2: ' + playerHand2)
+
+  return [playerHand1, playerHand2]
+}
+
+//GAME IS PLAYED BELOW
+
 export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   //ran once
   const newDeck = generateDeck()
   const shuffledDeck = shuffle(newDeck, seed)
+  //logger.info(seed)
   let playerHand = [shuffledDeck.shift(), shuffledDeck.shift()]
   let isPlayerTurn = true
 
@@ -177,6 +190,32 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   //End game if first cards provide winner
   if (exitConditionMet(playerHand, 'Player', logger)) {
     return
+  }
+
+  const card1 = playerHand[0]
+  const card2 = playerHand[1]
+  let hands = []
+  let splitchoice = true
+
+  //splittable
+  if (card1[0] === card2[0]) {
+    while (splitChoice) {
+      const action = window.prompt('Would you like to split (yes or no)')
+      switch (action) {
+        case 'yes': {
+          //split cards
+          hands = split(playerHand, shuffledDeck, logger)
+          splitChoice = false
+        }
+        case 'no': {
+          splitChoice = false
+          break
+        }
+        default: {
+          logger.info('Incorrect input')
+        }
+      }
+    }
   }
 
   //Player makes a choice while still in the game e.g isPlayerTurn = true
@@ -204,8 +243,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   }
   //dealer draws more than 17
   if (pointsForHand(dealersHand) >= 17) {
-    logger.info('comparing scores')
-    //compare scores
+    compareScores(playerHand, dealersHand, logger)
   } else {
     //needs to draw more cards
     while (isDealersTurn) {
