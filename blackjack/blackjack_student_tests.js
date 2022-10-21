@@ -1,6 +1,12 @@
-import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
+import {
+  assert,
+  assertEquals,
+  assertStringIncludes,
+  assertArrayIncludes
+} from 'https://deno.land/std/testing/asserts.ts'
 // import { something } from './blackjack.js'
 import {
+  compareScores,
   exitConditionMet,
   generateDeck,
   play,
@@ -10,6 +16,7 @@ import {
 } from './blackjack.js'
 import shuffle from './support/shuffle.js'
 import { getTestLogger } from './support/logging.ts'
+import { playerChooses, takePlayerTurn } from './support/testing.js'
 
 const deck1 = ['2H', 'AS'] //13
 const deck2 = ['JH', 'JD', 'QD'] //30
@@ -17,6 +24,9 @@ const deck3 = ['2S', '5C', 'AC', 'KD'] //28
 const deck4 = ['AS', 'AC'] //21
 const deck5 = ['KS', '5H', '6C'] //21
 const deck6 = ['2H', '3D', '4D', '2D', '3S', '7S']
+
+const deck7 = ['JH', '8C'] // 18
+const deck8 = ['AC', '7H'] //18
 
 Deno.test("generateDeck(): a fresh deck in 'new deck order'", () => {
   // prettier-ignore
@@ -86,9 +96,9 @@ Deno.test(
     let playerHand = [shuffledDeck.shift(), shuffledDeck.shift()]
 
     //draws once
-    playerHand = playerDrawsCard(shuffledDeck, playerHand) //JS
+    playerHand = playerDrawsCard(shuffledDeck, playerHand, logger) //JS
     //Draws KS
-    assertEquals(playerDrawsCard(shuffledDeck, playerHand), [
+    assertEquals(playerDrawsCard(shuffledDeck, playerHand, logger), [
       '2H',
       'KC',
       'JS',
@@ -128,23 +138,95 @@ Deno.test(
 Deno.test(
   'exitConditionMet(): Testing whether an exitConditionMet returns true or false for values',
   async () => {
+    const { logger, handler } = await getTestLogger()
+
     //13, not bust
-    assertEquals(exitConditionMet(deck1, 'Dealer'), false)
-    assertEquals(exitConditionMet(deck1, 'Player'), false)
+    assertEquals(exitConditionMet(deck1, 'Dealer', logger), false)
+    assertEquals(exitConditionMet(deck1, 'Player', logger), false)
     //30, bust
-    assertEquals(exitConditionMet(deck2, 'Dealer'), true)
-    assertEquals(exitConditionMet(deck2, 'Player'), true)
+    assertEquals(exitConditionMet(deck2, 'Dealer', logger), true)
+    assertEquals(exitConditionMet(deck2, 'Player', logger), true)
     //28, bust
-    assertEquals(exitConditionMet(deck3, 'Dealer'), true)
-    assertEquals(exitConditionMet(deck3, 'Player'), true)
+    assertEquals(exitConditionMet(deck3, 'Dealer', logger), true)
+    assertEquals(exitConditionMet(deck3, 'Player', logger), true)
     //2 aces, 21
-    assertEquals(exitConditionMet(deck4, 'Dealer'), true)
-    assertEquals(exitConditionMet(deck4, 'Player'), true)
+    assertEquals(exitConditionMet(deck4, 'Dealer', logger), true)
+    assertEquals(exitConditionMet(deck4, 'Player', logger), true)
     //21, win
-    assertEquals(exitConditionMet(deck5, 'Dealer'), true)
-    assertEquals(exitConditionMet(deck5, 'Player'), true)
+    assertEquals(exitConditionMet(deck5, 'Dealer', logger), true)
+    assertEquals(exitConditionMet(deck5, 'Player', logger), true)
     //6cards, less than 21
-    assertEquals(exitConditionMet(deck6, 'Dealer'), true)
-    assertEquals(exitConditionMet(deck6, 'Player'), true)
+    assertEquals(exitConditionMet(deck6, 'Dealer', logger), true)
+    assertEquals(exitConditionMet(deck6, 'Player', logger), true)
+  }
+)
+
+Deno.test('compareScores(): Testing the Draw', async () => {
+  const { logger, handler } = await getTestLogger()
+  compareScores(deck7, deck8, logger)
+  //console.log(handler.messages)
+  assertArrayIncludes(handler.messages, ['Draw!'])
+})
+
+Deno.test('compareScores(): Testing the Win', async () => {
+  const { logger, handler } = await getTestLogger()
+  compareScores(deck8, deck1, logger)
+  //console.log(handler.messages)
+  assertArrayIncludes(handler.messages, ['You win!'])
+})
+
+Deno.test('compareScores(): Testing the Lose', async () => {
+  const { logger, handler } = await getTestLogger()
+  compareScores(deck1, deck8, logger)
+  //console.log(handler.messages)
+  assertArrayIncludes(handler.messages, ['You lose!'])
+})
+
+Deno.test(
+  'playerTurn(): choosing to hit outputs a "Hitting" message',
+  async () => {
+    const { logger, handler } = await getTestLogger()
+    const c = playerChooses(['hit', 'stick'])
+    play({ logger, seed: 12 })
+
+    console.log(handler.messages)
+    assertArrayIncludes(handler.messages, ['Hitting'])
+    c.restore()
+  }
+)
+
+Deno.test(
+  'playerTurn(): choosing to stick outputs a "Hitting" message',
+  async () => {
+    const { logger, handler } = await getTestLogger()
+
+    const c = playerChooses(['hit', 'stick'])
+    play({ logger, seed: 12 })
+
+    console.log(handler.messages)
+    assertArrayIncludes(handler.messages, ['Hitting'])
+    c.restore()
+  }
+)
+
+Deno.test(
+  'compareScores(): Testing whether the scores are compared correctly (Players loses)',
+  async () => {
+    const { logger, handler } = await getTestLogger()
+    //player loses
+    compareScores(deck1, deck7, logger)
+    //Player loses, 13 vs 17
+    assertArrayIncludes(handler.messages, ['You lose!'])
+  }
+)
+
+Deno.test(
+  'compareScores(): Testing whether the scores are compared correctly (Players wins)',
+  async () => {
+    const { logger, handler } = await getTestLogger()
+    //player loses
+    compareScores(deck7, deck1, logger)
+    //Player wins, 17 vs 13
+    assertArrayIncludes(handler.messages, ['You win!'])
   }
 )

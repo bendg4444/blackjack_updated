@@ -69,24 +69,24 @@ export function pointsForCard(card) {
 }
 
 //function for player to draw card
-export function playerDrawsCard(deck, hand) {
+export function playerDrawsCard(deck, hand, logger) {
   let drawnCard = deck.shift()
-  defaultLogger.info('Hitting')
-  defaultLogger.info('You draw ' + drawnCard)
+  logger.info('Hitting')
+  logger.info('You draw ' + drawnCard)
   hand.push(drawnCard)
   return hand
 }
 
-export function exitConditionMet(hand, player) {
+export function exitConditionMet(hand, player, logger) {
   //function to establish whether an exit condition is met
   //return a true or false
   //if true, process write out the correct end game response depending on player
   if (pointsForHand(hand) === 21) {
     //who win or lose
     if (player === 'Dealer') {
-      defaultLogger.info(LOSE_MESSAGE)
+      logger.info(LOSE_MESSAGE)
     } else if (player === 'Player') {
-      defaultLogger.info(WIN_MESSAGE)
+      logger.info(WIN_MESSAGE)
     }
     return true
   }
@@ -95,9 +95,9 @@ export function exitConditionMet(hand, player) {
     if (hand[0][0] === 'A' && hand[1][0] === 'A') {
       //who win or lose
       if (player === 'Dealer') {
-        defaultLogger.info(LOSE_MESSAGE)
+        logger.info(LOSE_MESSAGE)
       } else if (player === 'Player') {
-        defaultLogger.info(WIN_MESSAGE)
+        logger.info(WIN_MESSAGE)
       }
       return true
     }
@@ -106,22 +106,32 @@ export function exitConditionMet(hand, player) {
   if (hand.length >= 6 && pointsForHand(hand) <= 21) {
     //who win or lose
     if (player === 'Dealer') {
-      defaultLogger.info(LOSE_MESSAGE)
+      logger.info(LOSE_MESSAGE)
     } else if (player === 'Player') {
-      defaultLogger.info(WIN_MESSAGE)
+      logger.info(WIN_MESSAGE)
     }
     return true
   } //greater than 21
   if (pointsForHand(hand) > 21) {
     if (player === 'Dealer') {
-      defaultLogger.info(WIN_MESSAGE)
+      logger.info(WIN_MESSAGE)
     } else if (player === 'Player') {
-      defaultLogger.info(LOSE_MESSAGE)
+      logger.info(LOSE_MESSAGE)
     }
     return true
   }
   //no win or lose condition met
   return false
+}
+
+export function compareScores(playerHand, dealerHand, logger) {
+  if (pointsForHand(playerHand) > pointsForHand(dealerHand)) {
+    logger.info(WIN_MESSAGE)
+  } else if (pointsForHand(playerHand) < pointsForHand(dealerHand)) {
+    logger.info(LOSE_MESSAGE)
+  } else {
+    logger.info(DRAW_MESSAGE)
+  }
 }
 
 export function playerTurn(deck, hand, logger = defaultLogger) {
@@ -131,7 +141,7 @@ export function playerTurn(deck, hand, logger = defaultLogger) {
   switch (action) {
     case 'hit': {
       // TO DO: Draw a card
-      hand = playerDrawsCard(deck, hand)
+      hand = playerDrawsCard(deck, hand, logger)
       // It's still the player's turn
       logger.info(
         `Your hand is ${hand.join(', ')}\n(${pointsForHand(hand)} points)`
@@ -165,7 +175,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   )
 
   //End game if first cards provide winner
-  if (exitConditionMet(playerHand, 'Player')) {
+  if (exitConditionMet(playerHand, 'Player', logger)) {
     return
   }
 
@@ -175,7 +185,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
     isPlayerTurn = playerTurn(shuffledDeck, playerHand, logger)
 
     //count the points after each player turn & check for win or lose
-    if (exitConditionMet(playerHand, 'Player')) {
+    if (exitConditionMet(playerHand, 'Player', logger)) {
       return
     }
   }
@@ -189,7 +199,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
     )} points)`
   )
   //dealer wins on drawn cards?
-  if (exitConditionMet(dealersHand, 'Dealer')) {
+  if (exitConditionMet(dealersHand, 'Dealer', logger)) {
     return
   }
   //dealer draws more than 17
@@ -209,14 +219,14 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
         )} points)`
       )
       //checks whether win or lose
-      if (exitConditionMet(dealersHand, 'Dealer')) {
+      if (exitConditionMet(dealersHand, 'Dealer', logger)) {
         return
       } //check whether loop has end
       if (pointsForHand(dealersHand) >= 17) {
         isDealersTurn = false
       }
     }
-    logger.info('comparing scores 2')
+    compareScores(playerHand, dealersHand, logger)
   }
 }
 
