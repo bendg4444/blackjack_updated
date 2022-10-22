@@ -325,9 +325,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
     //needs to draw more cards
     while (isDealersTurn) {
       //dealer draws a card
-      let drawnCard = shuffledDeck.shift()
-      logger.info('Dealer draws ' + drawnCard)
-      dealersHand.push(drawnCard)
+      dealersHand = playerDrawsCard(shuffledDeck, dealersHand, logger)
       logHand(dealersHand, 'Dealer', logger)
 
       //checks whether win or lose

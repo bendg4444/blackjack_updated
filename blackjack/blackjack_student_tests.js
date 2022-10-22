@@ -21,6 +21,7 @@ import { playerChooses, takePlayerTurn } from './support/testing.js'
 
 //seed: 1666369614515 2 aces
 //seed: 1666371379198 same first card
+//seed: 1666449148721
 
 const deck1 = ['2H', 'AS'] //13
 const deck2 = ['JH', 'JD', 'QD'] //30
@@ -226,7 +227,7 @@ Deno.test('Ensure player goes first and dealer goes second', async () => {
   const { logger, handler } = await getTestLogger()
   const c = playerChooses(['stick'])
   play({ logger, seed: 12 })
-  console.log(handler.messages)
+  //console.log(handler.messages)
   let inOrder = false
   if (
     handler.messages[0].includes('Your hand is') &&
@@ -240,11 +241,11 @@ Deno.test('Ensure player goes first and dealer goes second', async () => {
 Deno.test('split(): Testing splitting deck functionality', async () => {
   const { logger, handler } = await getTestLogger()
   const c = playerChooses(['yes'])
-  const seed = 12
+  const seed = 1666371379198
   let deck = generateDeck(seed)
   let shuffledDeck = shuffle(deck, seed)
-
-  split(['4H', '4D'], shuffledDeck, logger)
+  play({ logger, seed })
+  //split(['4H', '4D'], shuffledDeck, logger)
   console.log(handler.messages)
 })
 
