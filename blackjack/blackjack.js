@@ -46,6 +46,8 @@ export function pointsForHand(hand) {
     count += pointsForCard(card[0])
     return count
   }, 0)
+  //special ACE case
+  if (hand.length === 2 && hand[0][0] === 'A' && hand[1][0] === 'A') return 21
   //total points for deck
   return points
 }
@@ -77,10 +79,7 @@ export function playerDrawsCard(deck, hand, logger) {
   return hand
 }
 
-export function exitConditionMet(hand, player, logger) {
-  //function to establish whether an exit condition is met
-  //return a true or false
-  //if true, process write out the correct end game response depending on player
+export function logExitCondition(hand, player, logger) {
   if (pointsForHand(hand) === 21) {
     //who win or lose
     if (player === 'Dealer') {
@@ -88,7 +87,6 @@ export function exitConditionMet(hand, player, logger) {
     } else if (player === 'Player') {
       logger.info(WIN_MESSAGE)
     }
-    return true
   }
   //two aces
   if (hand.length <= 2) {
@@ -99,7 +97,6 @@ export function exitConditionMet(hand, player, logger) {
       } else if (player === 'Player') {
         logger.info(WIN_MESSAGE)
       }
-      return true
     }
   }
   //number of cards = 6 or greater and less than equal to 21
@@ -110,14 +107,37 @@ export function exitConditionMet(hand, player, logger) {
     } else if (player === 'Player') {
       logger.info(WIN_MESSAGE)
     }
-    return true
   } //greater than 21
   if (pointsForHand(hand) > 21) {
     if (player === 'Dealer') {
-      logger.info(WIN_MESSAGE)
+      logger.info('Hand bust!')
     } else if (player === 'Player') {
-      logger.info(LOSE_MESSAGE)
+      logger.info('Hand bust!')
     }
+  }
+}
+
+export function exitConditionMet(hand, player, logger) {
+  //function to establish whether an exit condition is met
+  //return a true or false
+  //if true, process write out the correct end game response depending on player
+  if (pointsForHand(hand) === 21) {
+    //who win or lose
+    return true
+  }
+  //two aces
+  if (hand.length <= 2) {
+    if (hand[0][0] === 'A' && hand[1][0] === 'A') {
+      //who win or lose
+      return true
+    }
+  }
+  //number of cards = 6 or greater and less than equal to 21
+  if (hand.length >= 6 && pointsForHand(hand) <= 21) {
+    //who win or lose
+    return true
+  } //greater than 21
+  if (pointsForHand(hand) > 21) {
     return true
   }
   //no win or lose condition met
@@ -165,8 +185,8 @@ export function split(playerHand, shuffledDeck, logger) {
   logger.info('Splitting')
   let playerHand1 = [playerHand[0], shuffledDeck.shift()]
   let playerHand2 = [playerHand[1], shuffledDeck.shift()]
-  logger.info('Split Deck 1: ' + playerHand1)
-  logger.info('Split Deck 2: ' + playerHand2)
+  // logger.info('Split Deck 1: ' + playerHand1)
+  // logger.info('Split Deck 2: ' + playerHand2)
 
   return [playerHand1, playerHand2]
 }
@@ -195,7 +215,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   const card1 = playerHand[0]
   const card2 = playerHand[1]
   let hands = []
-  let splitchoice = true
+  let splitChoice = true
 
   //splittable
   if (card1[0] === card2[0]) {
@@ -205,6 +225,13 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
         case 'yes': {
           //split cards
           hands = split(playerHand, shuffledDeck, logger)
+          hands.forEach((hand, idx) => {
+            logger.info(
+              `Your hand${idx + 1} is ${hand.join(', ')} (${pointsForHand(
+                hand
+              )} points)`
+            )
+          })
           splitChoice = false
         }
         case 'no': {
@@ -217,15 +244,71 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
       }
     }
   }
+  //cards have been split
+  if (hands.length > 0) {
+    let bothBust = false
+    let bothHandsInGame = true
 
-  //Player makes a choice while still in the game e.g isPlayerTurn = true
-  while (isPlayerTurn) {
-    //player takes turn
-    isPlayerTurn = playerTurn(shuffledDeck, playerHand, logger)
+    //take goes for both hands individually
+    for (let i = 0; i < hands.length; i++) {
+      let hand = hands[i]
+      let playHand = true
+      logger.info(
+        `**\nPlaying with hand: ${hand.join(', ')}\n(${pointsForHand(
+          hand
+        )} points)`
+      )
+      while (playHand) {
+        //take player turn
+        playHand = playerTurn(shuffledDeck, hand, logger)
+        if (
+          //hand returns 21 & not bust
+          (exitConditionMet(hand, 'Player', logger) &&
+            pointsForHand(hand) === 21) ||
+          //Ace condition
+          (hand[0][0] === 'A' &&
+            hand[1][0] === 'A' &&
+            exitConditionMet(hand, 'Player', logger))
+        ) {
+          //ends game
+          logExitCondition(hand, 'Player', logger)
+          return
+        } else if (pointsForHand(hand) > 21) {
+          playHand = false
+          bothHandsInGame = false
+        }
+      }
+    }
 
-    //count the points after each player turn & check for win or lose
-    if (exitConditionMet(playerHand, 'Player', logger)) {
+    //Both hands are bust -> exit game (player lost)
+    if (pointsForHand(hands[0]) > 21 && pointsForHand(hands[1]) > 21) {
+      logger.info(LOSE_MESSAGE)
       return
+    }
+
+    //choose higher rated hand for player (both hands in game)
+    pointsForHand(hands[0]) >= pointsForHand(hands[1])
+      ? (playerHand = hands[0])
+      : (playerHand = hands[1])
+
+    logger.info(
+      `Your best hand ${playerHand.join(', ')}\n(${pointsForHand(
+        playerHand
+      )} points)`
+    )
+    //1 hand (no split)
+  } else {
+    //Player makes a choice while still in the game e.g isPlayerTurn = true
+    while (isPlayerTurn) {
+      //player takes turn
+      isPlayerTurn = playerTurn(shuffledDeck, playerHand, logger)
+
+      //count the points after each player turn & check for win or lose
+      if (exitConditionMet(playerHand, 'Player', logger)) {
+        logExitCondition(playerHand, 'Player', logger)
+        if (pointsForHand(playerHand) > 21) logger.info(LOSE_MESSAGE)
+        return
+      }
     }
   }
 
@@ -239,6 +322,7 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
   )
   //dealer wins on drawn cards?
   if (exitConditionMet(dealersHand, 'Dealer', logger)) {
+    logExitCondition(dealersHand, 'Dealer', logger)
     return
   }
   //dealer draws more than 17
@@ -258,6 +342,8 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
       )
       //checks whether win or lose
       if (exitConditionMet(dealersHand, 'Dealer', logger)) {
+        logExitCondition(dealersHand, 'Dealer', logger)
+        if (pointsForHand(dealersHand) > 21) logger.info(WIN_MESSAGE)
         return
       } //check whether loop has end
       if (pointsForHand(dealersHand) >= 17) {
