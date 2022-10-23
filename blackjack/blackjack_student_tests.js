@@ -9,6 +9,7 @@ import {
   compareScores,
   exitConditionMet,
   generateDeck,
+  logExitCondition,
   play,
   playerDrawsCard,
   pointsForCard,
@@ -136,7 +137,7 @@ Deno.test(
     assertEquals(pointsForHand(deck1), 13)
     assertEquals(pointsForHand(deck2), 30)
     assertEquals(pointsForHand(deck3), 28)
-    assertEquals(pointsForHand(deck4), 22)
+    assertEquals(pointsForHand(deck4), 21)
   }
 )
 
@@ -227,13 +228,17 @@ Deno.test('Ensure player goes first and dealer goes second', async () => {
   const { logger, handler } = await getTestLogger()
   const c = playerChooses(['stick'])
   play({ logger, seed: 12 })
-  //console.log(handler.messages)
-  let inOrder = false
-  if (
-    handler.messages[0].includes('Your hand is') &&
-    handler.messages[2].includes("Dealer's hand is")
-  )
-    inOrder = true
+
+  let found = false
+  let inOrder = true
+  for (let i in handler.messages) {
+    let message = handler.messages[i]
+    //console.log(message)
+    if (message.includes("Player's hand is")) {
+      found = true
+    } else if (message.includes("Dealer's hand is") && found === false)
+      inOrder = false
+  }
   assertEquals(inOrder, true)
   c.restore()
 })
@@ -249,6 +254,16 @@ Deno.test('split(): Testing splitting deck functionality', async () => {
   console.log(handler.messages)
 })
 
+Deno.test(
+  'logExitCondition(): log the correct exit winning condition',
+  async () => {
+    const { logger, handler } = await getTestLogger()
+    logExitCondition(['AC', 'AD'], 'Player', logger)
+    handler.messages.includes('You win!')
+
+    //assertEquals(logExitCondition(['AC', 'AD'], 'Dealer', logger), 'You lose!')
+  }
+)
 // Deno.test(
 //   'canSplit(): Testing whether card matching function works',
 //   async () => {
