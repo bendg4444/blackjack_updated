@@ -40,17 +40,34 @@ export function pointsForCard(card) {
   let points = 0
 
   //work out points for particular card
-  if (card[0] === 'A') {
+  if (isAce(card[0])) {
     points += 11 //ACE
-  } else if (card[0] === 'K' || card[0] === 'Q' || card[0] === 'J') {
-    points += 10 //FACE
-  } else if (card[0] === '1') {
-    points += 10 //10
+  } else if (isFaceCardOr10(card[0])) {
+    points += 10 //FACE or 10
   } else {
     //normal cards
     points += parseInt(card[0])
   }
   return points
+}
+
+export function isAce(card) {
+  if (card[0] === 'A') {
+    return true
+  }
+  return false
+}
+
+export function isFaceCardOr10(card) {
+  if (
+    card[0] === 'K' ||
+    card[0] === 'Q' ||
+    card[0] === 'J' ||
+    card[0] === '1'
+  ) {
+    return true
+  }
+  return false
 }
 
 //adds a card to hand and returns hand
@@ -298,12 +315,13 @@ export function play({ seed = Date.now(), logger = defaultLogger } = {}) {
 
       //count the points after each player turn & check for win or lose
       if (exitConditionMet(playerHand, 'Player', logger)) {
-        logExitCondition(playerHand, 'Player', logger)
         if (pointsForHand(playerHand) > 21) {
           //prints out lose message in result of bust & ends game
           logger.info(LOSE_MESSAGE)
           return
         }
+        logExitCondition(playerHand, 'Player', logger)
+        return
       }
     }
   }
